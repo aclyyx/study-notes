@@ -238,6 +238,194 @@ public class FirstController {
 
 ## 简单数据操作
 
+### 导入依赖和完成配置
+
+数据库操作使用到了 Spring 的 JPA，又是新知识点之后再详细了解；这里先引入 Maven 依赖，同时需要引入mysql jdbc 驱动包依赖。  
+
+````
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.11</version>
+</dependency>
+````
+
+在 application.yml 配置文件中添加数据源和jpa的配置。  
+其中``ddl-auto: update``表示自动创建和更新数据库中表。  
+
+````
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/spring_boot
+    username: root
+    password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+````
+
+### 代码
+
+#### 创建数据实体类
+
+* ``@Entity``表示 Girl 是个实体类；
+* ``@Data``自动生成 getter 和 setter；
+* ``@Id``表示 id 为实体的ID；
+* ``@GeneratedValue``主键自动生成填充值。  
+
+````
+import lombok.Data;
+import javax.persistence.Id;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+
+@Data
+@Entity
+public class Girl {
+
+    @Id
+    @GeneratedValue
+    private Integer id;
+
+    private String cupSize;
+
+    private Integer age;
+}
+````
+
+#### 创建数据库操作接口
+
+接口继承自``JpaRepository ``，两个参数为实体类名和主键类型。太简洁了！  
+代码片段中``public List<Girl> findByAge(Integer age);``是按照 age 查询的方法定义，注意方法名命名规则，约定大于配置。  
+
+````
+import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface GirlRepository extends JpaRepository<Girl, Integer> {
+
+    public List<Girl> findByAge(Integer age);
+}
+````
+
+#### 增删改查
+
+在 Spring 的 jpa 中早就帮我们实现了常用的增删改查操作。  
+
+* 增：save(entity)
+* 删：delete(id)
+* 改：save(entity)
+* 查：findAll(), findOne(id)
+
+还可以自定义扩展查询方法，就是上面的代码片段写的那样。  
+
+#### 在 Controller 中使用增删改查
+
+在写下面的代码时，遇到了一个坑。误在调用``findOne(id)``时使用了``getOne(id)``导致程序报了莫名其妙的错误：``org.springframework.http.converter.HttpMessageNotWritableException``。  
+
+````
+import java.util.List;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+
+@RestController
+public class GirlController {
+
+    @Autowired
+    private GirlRepository girlRepository;
+
+    @GetMapping(value = "/girls")
+    public List<Girl> girlList() {
+        return girlRepository.findAll();
+    }
+
+    @PostMapping(value = "/girls")
+    public Girl add(@RequestParam(value = "age") Integer age,
+                    @RequestParam(value = "cupSize") String cupSize) {
+        Girl girl = new Girl();
+        girl.setAge(age);
+        girl.setCupSize(cupSize);
+        return girlRepository.save(girl);
+    }
+
+    @GetMapping(value = "/girls/{id}")
+    public Girl get(@PathVariable("id") Integer id) {
+        Girl girl = girlRepository.findOne(id);
+        return girl;
+    }
+
+    @PutMapping(value = "/girls/{id}")
+    public Girl update(@PathVariable("id") Integer id,
+                       @RequestParam(value = "age") Integer age,
+                       @RequestParam(value = "cupSize") String cupSize) {
+        Girl girl = new Girl();
+        girl.setId(id);
+        girl.setAge(age);
+        girl.setCupSize(cupSize);
+        return girlRepository.save(girl);
+    }
+
+    @DeleteMapping(value = "/girls/{id}")
+    public void delete(@PathVariable("id") Integer id) {
+        girlRepository.delete(id);
+    }
+
+    @GetMapping(value = "/girls/age/{age}")
+    public List<Girl> girlListByAge(@PathVariable("age") Integer age) {
+        return girlRepository.findByAge(age);
+    }
+}
+````
+
+### 事务管理
+
+在一次请求中多次操作数据库是常有的事儿，为了保持数据的一致性和安全，需要启用数据库事物操作；启用方法非常简单。  
+这里简单的在 Controller 中在一次请求中插入两条数据，事物的开启只需要添加注解``@Transactional``就可以了。  
+
+````
+... ...
+
+public class GirlController {
+
+    ... ...
+
+    @PostMapping(value = "/girls/addtwo")
+    @Transactional
+    public void addtwo() {
+        Girl g1 = new Girl();
+        g1.setCupSize("A");
+        g1.setAge(1);
+        girlRepository.save(g1);
+
+        Girl g2 = new Girl();
+        g2.setCupSize("BB");
+        g2.setAge(1);
+        girlRepository.save(g2);
+    }
+}
+````
+
+## 课程结束
+
+初见 Spring Boot 印象相当不错，毕竟除了 Blade 我认识的 Web App 还是十几年前的 JSP ... ...  
+相比 Blade，Spring Boot 功能强大了不少，毕竟 Blade 是个人维护的微服务框架。当然，也许是首先接触 Blade 的原因，个人感觉 Blade 还是更加的小巧美丽。  
+
+## 参考
+
+> [廖师兄][4]的[《2小时学会SpringBoot》][2]  
+> [Blade Github主页][3]  
+> [Lombok 介绍][5]  
+> [pringboot 修改默认端口及application.properties常用配置][6]  
+
 [1]: "https://www.imooc.com/" "慕课网"
 [2]: "https://www.imooc.com/video/13589" "2小时学会SpringBoot"
 [3]: "https://github.com/lets-blade/blade" "Blade"
