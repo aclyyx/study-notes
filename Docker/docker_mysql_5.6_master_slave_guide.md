@@ -269,8 +269,10 @@ start slave;
 ## 参考
 本文中并未对所执行的命令进行说明，请对应《参考》查看。
 
+> [【菜鸟教程】Docker 安装 MySQL][3]  
 > [基于 Docker 的 MySQL 主从复制搭建][1]  
 > [重置mysql主从同步（MySQL Reset Master-Slave Replication）][2]  
 
 [1]: https://www.jianshu.com/p/ab20e835a73f "基于 Docker 的 MySQL 主从复制搭建"
 [2]: https://www.cnblogs.com/sunyuxun/archive/2012/09/13/2683338.html "重置mysql主从同步（MySQL Reset Master-Slave Replication）"
+[3]: http://www.runoob.com/docker/docker-install-mysql.html "【菜鸟教程】Docker 安装 MySQL"
