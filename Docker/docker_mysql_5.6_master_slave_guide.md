@@ -1,5 +1,7 @@
 # 基于 Docker 的 MySQL 5.6 主从配置
 
+![](imgs/logo.jpeg)
+
 ## 通过 Docker 安装并运行 MySQL 5.6
 
 运行 docker 命令``docker pull mysql:5.6``拉取 MySQL 5.6 版本。  
